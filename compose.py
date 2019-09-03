@@ -4,13 +4,13 @@ import requests
 import urllib3.request
 from itertools import islice
 
-def send_data_to_script(head):
-    new = ""
+def print_compose_version(head):
+    string = ""
 
-    for x in head:
-        new += x
+    for letter in head:
+        string += letter
 
-    return new
+    return string
 
 response = requests.get('https://docs.docker.com/release-notes/docker-compose/')
 
@@ -20,4 +20,4 @@ for lines in response:
             head = list(islice(lines.decode(), 27, 33))
             break
 
-print(send_data_to_script(head))
+print(print_compose_version(head))
