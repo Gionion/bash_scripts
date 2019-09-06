@@ -1,14 +1,20 @@
 #!/bin/bash
+
 set -e
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PARENT_DIR=$(dirname $DIR)
+PYTHON="python3 $DIR/foo.py"
+COMPOSE_VERSION=$($PYTHON --parameter compose)
+RPM=$($PYTHON --parameter rpm)
+OS=$($PYTHON --parameter os)
+GPG=$($PYTHON --parameter gpg)
 
 function install_docker(){
 	
 	function install_compose(){		
-		compose_version=$(python3 $DIR/compose.py)
-		curl -L https://github.com/docker/compose/releases/download/$compose_version/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+		
+		curl -L https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 		chmod +x /usr/local/bin/docker-compose
 
 		if grep -q "docker" /etc/group; then
@@ -63,17 +69,16 @@ function install_docker(){
 		fi
 	}
 
-	function centos_redhat(){
-		#do the same as with docker version, grab the last version of Centos, then grab stable version without any x.15 kinda version and then the last version of the GPG-KEY
-		cat > "centos.repo" <<EOF
+	function centos_redhat(){		
+		cat > "/etc/yum.repos.d/centos.repo" <<EOF
 [centos]
 name=centos
-baseurl=http://mirror.centos.org/centos-7/7/os/x86_64/
+baseurl=$OS
 enabled=1
 gpgcheck=1
-gpgkey=http://mirror.centos.org/centos-7/7/os/x86_64/RPM-GPG-KEY-CentOS-7
+gpgkey=$GPG
 EOF
-		sudo yum install -y "http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.68-1.el7.noarch.rpm"
+		sudo yum install -y $RPM
 		#curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
 		#pip install docker-compose
 		install_compose
