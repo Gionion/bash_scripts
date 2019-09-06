@@ -61,12 +61,6 @@ function install_docker(){
 		fi
 
 		install_compose
-		
-		if [ -x "$(command -v unzip)" > /dev/null ]; then
-			:
-		else
-			yum install -y unzip
-		fi
 	}
 
 	function centos_redhat(){		
@@ -105,24 +99,12 @@ EOF
 				apt -y upgrade
 				apt install -y docker-ce
 
-				if [ -x "$(command -v unzip)" > /dev/null ]; then
-					:
-				else
-					apt install -y unzip
-				fi
-
 				install_compose
 			;;
 			"\"centos\"")
 				yum install -y yum-utils device-mapper-persistent-data lvm2
 				yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-				yum install -y docker-ce
-				
-				if [ -x "$(command -v unzip)" > /dev/null ]; then
-					:
-				else
-					yum install -y unzip
-				fi			
+				yum install -y docker-ce			
 			;;
 			"\"rhel\"")
 				read -e -p "There's not DockerCE for redhat, do you want to install the Enterprise Edition? Yes[y], No[n]" $rhel
