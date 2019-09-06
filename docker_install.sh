@@ -4,7 +4,7 @@ set -e
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PARENT_DIR=$(dirname $DIR)
-PYTHON="python3 $DIR/foo.py"
+PYTHON="python3 $DIR/compose.py"
 COMPOSE_VERSION=$($PYTHON --parameter compose)
 RPM=$($PYTHON --parameter rpm)
 OS=$($PYTHON --parameter os)
