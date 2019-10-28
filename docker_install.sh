@@ -4,11 +4,11 @@ set -e
 
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PARENT_DIR=$(dirname $DIR)
-PYTHON="python3 $DIR/main.py"
+PYTHON="python3 $DIR/compose.py"
 COMPOSE_VERSION=$($PYTHON --parameter compose)
-RPM=$($PYTHON --parameter rpm)
-OS=$($PYTHON --parameter os)
-GPG=$($PYTHON --parameter gpg)
+#RPM=$($PYTHON --parameter rpm)
+#OS=$($PYTHON --parameter os)
+#GPG=$($PYTHON --parameter gpg)
 
 function install_docker(){
 	
@@ -27,9 +27,7 @@ function install_docker(){
 	}
 
 	function docker_enterprise(){
-		if [ -f /etc/yum.repos.d/docker*.repo ]; then
-			rm /etc/yum.repos.d/docker*.repo
-		fi
+		rm /etc/yum.repos.d/docker*.repo
 		read -e -p "Insert your Docker-EE-URL: " DOCKERURL
 		export $DOCKERURL
 		sudo -E sh -c 'echo "$DOCKERURL/rhel" > /etc/yum/vars/dockerurl'
@@ -38,7 +36,7 @@ function install_docker(){
 		yum install -y yum-utils device-mapper-persistent-data 
 		yum-config-manager --enable rhel-7-server-extras-rpms
 
-		read -e -p "Is this machine running on AWS or Azure? AWS, Azure, None of them [press 'ENTER'] `echo $'\n '`" Cloud
+		read -e -p "Is this machine running on AWS or Azure? AWS, Azure, None of them [press 'ENTER']" Cloud
 		case $Cloud in
 			"AWS")
 				yum-config-manager --enable rhui-REGION-rhel-server-extras
@@ -63,9 +61,15 @@ function install_docker(){
 		fi
 
 		install_compose
+		
+		if [ -x "$(command -v unzip)" > /dev/null ]; then
+			:
+		else
+			yum install -y unzip
+		fi
 	}
 
-	function centos_redhat(){		
+	function centos_redhat2(){		
 		cat > "/etc/yum.repos.d/centos.repo" <<EOF
 [centos]
 name=centos
@@ -74,9 +78,17 @@ enabled=1
 gpgcheck=1
 gpgkey=$GPG
 EOF
-		yum install -y $RPM
+		sudo yum install -y $RPM
+		#curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+		#pip install docker-compose
+		install_compose
+	}
+
+	function centos_redhat(){		
+		yum install -y yum-utils device-mapper-persistent-data lvm2
 		yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 		yum install -y docker-ce
+
 		install_compose
 	}
 
@@ -100,43 +112,47 @@ EOF
 				apt -y update
 				apt -y upgrade
 				apt install -y docker-ce
-				
+
+				if [ -x "$(command -v unzip)" > /dev/null ]; then
+					:
+				else
+					apt install -y unzip
+				fi
+
 				install_compose
 			;;
 			"\"centos\"")
 				yum install -y yum-utils device-mapper-persistent-data lvm2
 				yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-				yum install -y docker-ce		
+				yum install -y docker-ce
+				
+				if [ -x "$(command -v unzip)" > /dev/null ]; then
+					:
+				else
+					yum install -y unzip
+				fi			
 			;;
 			"\"rhel\"")
-				while true; do
-					read -p "There's not DockerCE for redhat, do you want to install the Enterprise Edition? Yes[y], No[n] `echo $'\n '`" -n 1 -r
-					case $REPLY in
-						[Yy]* )
-							echo "\n"
-							docker_enterprise
-							break
-						;;
-						[Nn]* )							
-							read -p "Do you want to install Docker CE using Centos repositories? Yes[y], No[N] `echo $'\n '`" -n 1 -r
-							case $REPLY in
-								y|Y )
-									#centos_redhat
-									yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-									yum install -y docker-ce
-									install_compose
-									break
-								;;
-								*)
-									break
-								;;
-							esac
-						;;
-						*)
-							echo "Please answer yes or no."
-						;;
-					esac
-				done
+				read -e -p "There's not DockerCE for redhat, do you want to install the Enterprise Edition? Yes[y], No[n]" $rhel
+				case $rhel in
+					y|Y)
+						docker_enterprise
+					;;
+					n|N)
+						read -e -p "Do you want to install Docker CE using Centos repositories? Yes[y], No[N]" $centos_repo
+						case $centos_repo in
+							y|Y )
+								centos_redhat
+							;;
+							*)
+								exit 0
+							;;
+						esac
+					;;
+					*)
+						exit 0
+					;;
+				esac
 			;;
 		esac
 	}
