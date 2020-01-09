@@ -11,20 +11,24 @@ class Install():
         self.COMPOSE_URL = 'https://docs.docker.com/release-notes/docker-compose/'
 
     def run(self):
-        if self.parameter == 'compose':
-            response = requests.get(self.COMPOSE_URL)
-            regex=re.compile(r'nomunge\".(.*)</a.')
-            
-            for lines in response:
-                if b"<li><a href=" in lines:
-                    if b"class=\"nomunge\"" in lines:
-                        version = lines.decode()
-                        break
-            
-            m = str(regex.findall(version))
+        try:
+            if self.parameter == 'compose':
+                response = requests.get(self.COMPOSE_URL)
+                regex=re.compile(r'<h2 id=\".*\".(.*)</h2>')
+                
+                for lines in response:
+                    if b"<h2 id=\"" in lines:
+                        if b"</h2>" in lines:                        
+                            version = lines.decode()
+                            break
+                
+                m = str(regex.findall(version))
 
-            result = m[2:-2]
-            print(result)
+                result = m[2:-2]
+                print(result)
+
+        except Exception as e:
+            print(str(e))
 
 class Import_Packages():
     def __init__(self, packages):
